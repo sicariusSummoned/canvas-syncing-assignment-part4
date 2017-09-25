@@ -1,13 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
-    <script type="text/babel" >
-        "use strict";
-    
-    </script>
-</head>
-<body>
 
+<head>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
+  <script type="text/babel">
+    "use strict"; 
+    
+    let socket;
+    let canvas;
+    let ctx;
+    let sendBufferCanvas;
+    let sendBufferCtx;
+
+
+    const setup = () =>{
+      sendBufferCanvas = document.createElement("canvas");
+      sendBufferCanvas.height = 200;
+      sendBufferCanvas.width = 200;
+      sendBufferCtx = sendBufferCanvas.getContext("2d");
+      
+      ctx.fillRect(100,100,200,200); //draw to screen
+      
+      sendBufferCtx.fillRect(0,0,200,200); //draw to hidden buffer
+      
+      const data = {
+        x:300,
+        y:300,
+        height:200,
+        width:200,
+        imgData:sendBufferCanvas.toDataURL(), //get pixel data from canvas
+      };
+      
+      socket.emit("draw", data);
+    }
+    
+
+    const handleMessage = (data) =>{
+      let image = new Image();
+
+      image.onload = () =>{
+        ctx.save();
+        ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(image,data.x,data.y, data.width, data.height);
+        ctx.restore();
+        console.log("Image Loaded");
+      };
+      
+      image.src = data.imgData;
+    }
+
+
+
+
+    const init = () =>{
+      canvas = document.querySelector("#canvas");
+      ctx = canvas.getContext("2d");
+      
+      socket = io.connect();
+      
+      socket.on('message', (data)=>{
+        console.dir(data);
+        handleMessage(data);
+      });
+      
+      
+      socket.on('connect',()=>{
+        socket.emit('join');
+      });
+      //socket.on('updateCanvas' drawCanvas);
+      
+      setup();
+      
+      
+    }
+    
+    window.onload = init;
+  </script>
+</head>
+
+<body>
+  <canvas id="canvas" height="700" width="700">Please use a Canvas compatible browser!</canvas>
+  
 </body>
+
 </html>
